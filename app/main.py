@@ -173,7 +173,6 @@ async def shutdown_scheduler():
 
 @app.get("/")
 def root():
-    server_state.last_activity = datetime.now() 
     return {"message": "server is running", "last_activity": server_state.last_activity.isoformat()}
 
 @app.get("/news", response_model=NewsResponse)
