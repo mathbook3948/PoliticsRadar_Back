@@ -15,8 +15,8 @@ from sqlmodel import Session
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 
-from app.database.database import NewsSQLModelDB, get_session, engine
-from app.services.News import News
+from database.database import NewsSQLModelDB, get_session, engine
+from services.News import News
 scheduler = AsyncIOScheduler()
 
 class NewsAnalysis(BaseModel):
