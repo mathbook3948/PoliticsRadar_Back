@@ -32,6 +32,8 @@ class NewsResponse(BaseModel):
     keyword : str
     time: datetime
     effects: List[str]  # EffectResponse 대신 str 사용
+    class Config:
+        from_attributes = True
     
 class ServerState:
     def __init__(self):
