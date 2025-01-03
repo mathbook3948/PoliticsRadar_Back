@@ -32,6 +32,11 @@ class NewsResponse(BaseModel):
     keyword : str
     time: datetime
     effects: List[str]  # EffectResponse 대신 str 사용
+    
+class ServerState:
+    def __init__(self):
+        self.last_activity = datetime.now()
+        self.is_running = False
 
     class Config:
         from_attributes = True
@@ -46,8 +51,18 @@ class NewsResponse(BaseModel):
             time=db_news.time,
             effects=[effect.effect for effect in db_news.effects]  # 문자열 리스트로 변환
         )
+        
+async def keep_alive():
+    print("Keep-alive check executed")
+    try:
+        with Session(engine) as session:
+            _ = NewsSQLModelDB.get_news(session)
+        server_state.last_activity = datetime.now()
+    except Exception as e:
+        print(f"Keep-alive check failed: {e}")
 
 app = FastAPI()
+server_state = ServerState()
 
 app.add_middleware(
     CORSMiddleware,
@@ -126,20 +141,28 @@ async def startup():
         id="update_news",
         replace_existing=True
     )
+    scheduler.add_job(
+        keep_alive,
+        IntervalTrigger(minutes=4),
+        id="keep_alive",
+        replace_existing=True
+    )
     scheduler.start()
 
 @app.on_event("shutdown")
 async def shutdown_scheduler():
+    server_state.is_running = False
     scheduler.shutdown()
 
 @app.get("/")
 def root():
-    print("root()")
-    return {"message": "server is running"}
+    server_state.last_activity = datetime.now() 
+    return {"message": "server is running", "last_activity": server_state.last_activity.isoformat()}
 
 @app.get("/news", response_model=NewsResponse)
 @limiter.limit("5/minute")
 def api(request: Request):
+    server_state.last_activity = datetime.now()
     with Session(engine) as session:
         news = NewsSQLModelDB.get_news(session)
         return NewsResponse.from_orm(news)
