@@ -34,6 +34,21 @@ class NewsResponse(BaseModel):
     effects: List[str]  # EffectResponse 대신 str 사용
     class Config:
         from_attributes = True
+    @classmethod
+    def from_orm(cls, db_news):
+        # effects가 NewsSQLModelEffects 객체의 리스트이므로, 
+        # 각 객체에서 effect 속성만 추출
+        effects_list = [effect.effect for effect in db_news.effects] if db_news.effects else []
+        
+        # 딕셔너리로 변환하여 반환
+        return cls(
+            id=db_news.id,
+            issue=db_news.issue,
+            importance=db_news.importance,
+            keyword=db_news.keyword,
+            time=db_news.time,
+            effects=effects_list  # 문자열 리스트로 변환된 effects
+        )
     
 class ServerState:
     def __init__(self):
